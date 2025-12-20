@@ -1,4 +1,8 @@
 import { GalleryVerticalEnd } from "lucide-react"
+import { useFormik } from "formik"
+import * as Yup from "yup"
+import { useDispatch, useSelector } from "react-redux"
+import { useNavigate, Link } from "react-router-dom"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -10,14 +14,41 @@ import {
   FieldSeparator,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { loginUser } from "@/_actions/authActions"
+import type { AppDispatch, RootState } from "@/store"
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const dispatch = useDispatch<AppDispatch>()
+  const navigate = useNavigate()
+  const { loading, error } = useSelector((state: RootState) => state.auth)
+
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      password: "",
+    },
+    validationSchema: Yup.object({
+      email: Yup.string()
+        .email("Invalid email address")
+        .required("Required"),
+      password: Yup.string()
+        .min(6, "Must be 6 characters or more")
+        .required("Required"),
+    }),
+    onSubmit: async (values) => {
+      const result = await dispatch(loginUser(values))
+      if (loginUser.fulfilled.match(result)) {
+        navigate("/")
+      }
+    },
+  })
+
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
-      <form>
+      <form onSubmit={formik.handleSubmit}>
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
             <a
@@ -31,7 +62,7 @@ export function LoginForm({
             </a>
             <h1 className="text-xl font-bold">Welcome to Acme Inc.</h1>
             <FieldDescription>
-              Don&apos;t have an account? <a href="#">Sign up</a>
+              Don&apos;t have an account? <Link to="/signup">Sign up</Link>
             </FieldDescription>
           </div>
           <Field>
@@ -40,23 +71,34 @@ export function LoginForm({
               id="email"
               type="email"
               placeholder="m@example.com"
-              required
+              {...formik.getFieldProps("email")}
             />
+            {formik.touched.email && formik.errors.email ? (
+              <div className="text-red-500 text-sm mt-1">{formik.errors.email}</div>
+            ) : null}
           </Field>
           <Field>
             <FieldLabel htmlFor="password">Password</FieldLabel>
             <Input
               id="password"
               type="password"
-              required
+              {...formik.getFieldProps("password")}
             />
+             {formik.touched.password && formik.errors.password ? (
+              <div className="text-red-500 text-sm mt-1">{formik.errors.password}</div>
+            ) : null}
           </Field>
+          {error && <div className="text-red-500 text-sm text-center">{error}</div>}
           <Field>
-            <Button type="submit">Login</Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? "Logging in..." : "Login"}
+            </Button>
           </Field>
           <FieldSeparator>Or</FieldSeparator>
+          {/* Social login buttons kept as visual placeholders for now */}
           <Field className="grid gap-4 sm:grid-cols-2">
             <Button variant="outline" type="button">
+              {/* Apple SVG */}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path
                   d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701"
@@ -66,6 +108,7 @@ export function LoginForm({
               Continue with Apple
             </Button>
             <Button variant="outline" type="button">
+              {/* Google SVG */}
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path
                   d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"
