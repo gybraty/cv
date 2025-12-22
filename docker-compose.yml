@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   server:
@@ -17,7 +17,7 @@ services:
       context: .
       dockerfile: apps/client/Dockerfile
     ports:
-      - "${CLIENT_PORT:-5173}:5173"
+      - "${CLIENT_PORT:-3001}:3001"
     volumes:
       - ./apps/client:/usr/src/app
     env_file:
