@@ -34,6 +34,7 @@ export default function DashboardPage() {
       <p>Welcome, {user?.email}!</p>
       
       <div className="flex gap-4">
+        <Button onClick={() => navigate("/profile")}>Edit Profile</Button>
         <Button onClick={fetchPrivateMessage}>Get Private Message</Button>
         <Button variant="destructive" onClick={handleLogout}>Logout</Button>
       </div>
