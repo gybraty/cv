@@ -4,7 +4,7 @@ import { loginUser, registerUser, logoutUser, checkSession } from '../_actions/a
 const initialState: any = {
   user: null,
   session: null,
-  loading: false,
+  loading: true,
   error: null,
 }
 
@@ -48,9 +48,16 @@ const authSlice = createSlice({
         state.session = null
       })
       // Check Session
+      .addCase(checkSession.pending, (state) => {
+        state.loading = true
+      })
       .addCase(checkSession.fulfilled, (state, action) => {
+        state.loading = false
         state.session = action.payload
         state.user = action.payload?.user || null
+      })
+      .addCase(checkSession.rejected, (state) => {
+        state.loading = false
       })
   },
 })
