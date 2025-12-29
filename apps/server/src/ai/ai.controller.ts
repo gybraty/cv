@@ -13,6 +13,9 @@ import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../users/decorators/current-user.decorator';
 import type { CurrentUserType } from '../users/decorators/current-user.decorator';
 
+import { ApiBearerAuth } from '@nestjs/swagger';
+
+@ApiBearerAuth('JWT-auth')
 @Controller('resumes')
 export class AiController {
   constructor(

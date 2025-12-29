@@ -8,13 +8,14 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ResumesService } from './resumes.service';
 import { CreateResumeDto } from './dto/create-resume.dto';
 import { UpdateResumeDto } from './dto/update-resume.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../users/decorators/current-user.decorator';
 
+@ApiBearerAuth('JWT-auth')
 @Controller('resumes')
 @UseGuards(AuthGuard)
 export class ResumesController {
