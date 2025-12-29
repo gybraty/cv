@@ -125,8 +125,6 @@ export class AiService {
       const response = result.response;
       let textResponse = response.text();
 
-      console.log(textResponse);
-      // Clean the response if it contains markdown code blocks
       textResponse = textResponse
         .replace(/^```json\s*/, '')
         .replace(/\s*```$/, '');
