@@ -28,4 +28,13 @@ export class UpdateResumeDto {
   @IsOptional()
   @IsObject()
   structuredData?: any;
+  @ApiProperty({
+    example: 'analyzed',
+    description: 'Status of the resume',
+    enum: ['draft', 'analyzed', 'exported'],
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  status?: string;
 }

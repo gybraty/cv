@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
+import { ApiOperation } from '@nestjs/swagger';
 import { ResumesService } from './resumes.service';
 import { CreateResumeDto } from './dto/create-resume.dto';
 import { UpdateResumeDto } from './dto/update-resume.dto';
@@ -20,6 +21,7 @@ export class ResumesController {
   constructor(private readonly resumesService: ResumesService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create new resume' })
   create(
     @CurrentUser() user: { sub: string },
     @Body() createResumeDto: CreateResumeDto,
@@ -28,16 +30,19 @@ export class ResumesController {
   }
 
   @Get()
+  @ApiOperation({ summary: 'Get all resumes' })
   findAll(@CurrentUser() user: { sub: string }) {
     return this.resumesService.findAll(user.sub);
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get resume by id' })
   findOne(@Param('id') id: string, @CurrentUser() user: { sub: string }) {
     return this.resumesService.findOne(id, user.sub);
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update resume by id' })
   update(
     @Param('id') id: string,
     @CurrentUser() user: { sub: string },
@@ -47,6 +52,7 @@ export class ResumesController {
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete resume by id' })
   remove(@Param('id') id: string, @CurrentUser() user: { sub: string }) {
     return this.resumesService.remove(id, user.sub);
   }

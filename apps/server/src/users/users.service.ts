@@ -23,6 +23,14 @@ export class UsersService {
     return newUser.save();
   }
 
+  async findBySupabaseId(supabaseId: string): Promise<UserDocument> {
+    const user = await this.userModel.findOne({ supabaseId });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
+
   async update(supabaseId: string, updateDto: UpdateUserDto): Promise<User> {
     const user = await this.userModel.findOne({ supabaseId });
     if (!user) {
