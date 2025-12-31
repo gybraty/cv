@@ -72,4 +72,8 @@ export const apiService = {
     const response = await apiClient.post<Resume>(`/resumes/${id}/analyze`);
     return response.data;
   },
+
+  async deleteResume(id: string): Promise<void> {
+    await apiClient.delete(`/resumes/${id}`);
+  },
 };
