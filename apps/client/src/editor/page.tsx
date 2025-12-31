@@ -194,7 +194,7 @@ export default function ResumeEditorPage() {
   if (!resume) return null
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen overflow-hidden bg-background flex flex-col">
       <EditorHeader 
         key={resume.title}
         resume={resume} 
@@ -203,8 +203,8 @@ export default function ResumeEditorPage() {
       />
       
       <FormProvider {...form}>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <div className="border-b border-border bg-background">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+          <div className="border-b border-border bg-background z-50">
             <div className="">
               <TabsList className="h-12 bg-transparent p-0 gap-4 w-full">
                 <TabsTrigger
@@ -234,8 +234,8 @@ export default function ResumeEditorPage() {
             </div>
           </div>
 
-          <TabsContent value="raw" className="flex-1 mt-0">
-            <div className="container px-4 py-6 md:px-6 h-full">
+          <TabsContent value="raw" className="flex-1 mt-0 min-h-0 overflow-hidden">
+            <div className=" px-4 py-6 md:px-6 h-full">
               <RawInputTab 
                  rawData={resume.rawData || ""} 
                  isAnalyzing={analyzing} 
@@ -245,11 +245,11 @@ export default function ResumeEditorPage() {
             </div>
           </TabsContent>
           
-          <TabsContent value="editor" className="flex-1 mt-0 overflow-auto">
+          <TabsContent value="editor" className="flex-1 mt-0 min-h-0 overflow-y-auto">
              <StructuredDataTab />
           </TabsContent>
           
-          <TabsContent value="preview" className="flex-1 mt-0">
+          <TabsContent value="preview" className="flex-1 mt-0 min-h-0 overflow-y-auto">
              <PreviewTab />
           </TabsContent>
         </Tabs>

@@ -24,9 +24,9 @@ John Doe
 john.doe@email.com | (555) 123-4567
 
 Senior Software Engineer with 5+ years of experience..."
-        className="flex-1 min-h-[400px] resize-none text-base leading-relaxed p-6 border-border focus-visible:ring-1 border-0 shadow-none focus-visible:ring-0"
+        className="overflow-y-auto flex-1 min-h-[400px] resize-none text-base leading-relaxed p-6 border-border focus-visible:ring-1 border-0 shadow-none focus-visible:ring-0"
       />
-      <div className="sticky bottom-0 p-4 bg-gradient-to-t from-background via-background to-transparent">
+      <div className="sticky bottom-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent flex justify-end">
         <Button
           onClick={onAnalyze}
           disabled={isAnalyzing}
@@ -41,7 +41,7 @@ Senior Software Engineer with 5+ years of experience..."
           ) : (
             <>
               <Sparkles className="mr-2 h-4 w-4" />
-              Analyze with AI
+              Improve with Gemini
             </>
           )}
         </Button>
