@@ -1,28 +1,21 @@
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { useForm, useFieldArray, Controller } from "react-hook-form"
+import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "sonner"
-import { Loader2, ArrowLeft, Sparkles, Plus, Trash2 } from "lucide-react"
+import { FileText, Database, Eye } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
-import { Card, CardContent } from "@/components/ui/card"
+import { Skeleton } from "@/components/ui/skeleton"
 
 import { apiService } from "@/_services/apiService"
 import { SimpleResumeDataSchema } from "@/types/resume"
 import type { Resume, ResumeData } from "@/types/resume"
+
+import { EditorHeader } from "@/components/editor/editor-header"
+import { RawInputTab } from "@/components/editor/raw-input-tab"
+import { StructuredDataTab } from "@/components/editor/structured-data-tab"
+import { PreviewTab } from "@/components/editor/preview-tab"
 
 // --- Helper for Debounce ---
 function useDebounce<T>(value: T, delay: number): T {
@@ -46,7 +39,7 @@ export default function ResumeEditorPage() {
 
   // --- Form Setup ---
   const form = useForm<ResumeData>({
-    resolver: zodResolver(SimpleResumeDataSchema) as any, // Type assertion to bypass strict optional vs undefined checks
+    resolver: zodResolver(SimpleResumeDataSchema) as any,
     defaultValues: {
       personalInfo: { fullName: "", email: "" },
       experience: [],
@@ -55,15 +48,8 @@ export default function ResumeEditorPage() {
     },
   })
 
-  const { control, register, reset, watch } = form
-  
-  const { fields: experienceFields, append: appendExp, remove: removeExp } = useFieldArray({
-    control,
-    name: "experience",
-  })
-
   // Watch for changes to auto-save
-  const watchedData = watch()
+  const watchedData = form.watch()
   const debouncedData = useDebounce(watchedData, 1000)
 
   // --- Fetch Resume ---
@@ -77,15 +63,16 @@ export default function ResumeEditorPage() {
         
         // Populate form if structured data exists
         if (data.structuredData) {
-          // Ensure arrays are initialized even if null from backend
           const parsedData = {
               ...data.structuredData,
               experience: data.structuredData.experience || [],
               education: data.structuredData.education || [],
               skills: data.structuredData.skills || [],
           }
-          reset(parsedData)
-          // If analyzed, default to editor tab
+          form.reset(parsedData)
+          // If analyzed (or has data), default to editor tab, unless just landed
+          // Matching target UI logic usually starts at raw input or last state. 
+          // For now, if analyzed, show editor.
           if (data.status === 'analyzed') setActiveTab("editor")
         }
       } catch (error) {
@@ -97,14 +84,12 @@ export default function ResumeEditorPage() {
       }
     }
     fetchResume()
-  }, [id, navigate, reset])
+  }, [id, navigate, form]) // Added form to deps carefully
 
   // --- Auto-Save Logic (Structured Data) ---
   useEffect(() => {
-    // Only proceed if we have a resume and aren't analyzing or loading
     if (!resume || loading || analyzing || activeTab === "raw") return
     
-    // Check if form is dirty by comparing JSON string (naive but effective for this depth)
     // Avoid saving if identical to what we think is on server
     if (JSON.stringify(debouncedData) === JSON.stringify(resume.structuredData)) {
         return
@@ -113,11 +98,9 @@ export default function ResumeEditorPage() {
     const saveChanges = async () => {
       try {
         setSaving(true)
-        // We update structuredData
         await apiService.updateResume(id!, {
           structuredData: debouncedData,
         })
-        // Update local resume state silently
         setResume((prev) => prev ? { ...prev, structuredData: debouncedData } : null)
       } catch (error) {
         console.error("Auto-save failed", error)
@@ -128,38 +111,35 @@ export default function ResumeEditorPage() {
 
     saveChanges()
     
-  }, [debouncedData, id, activeTab, analyzing, loading, resume]) // Included 'resume' in deps, careful about loops. 
-  // 'resume' changes on save, but 'debouncedData' shouldn't change immediately if user stopped typing.
-  // The check `JSON.stringify` prevents loop.
+  }, [debouncedData, id, activeTab, analyzing, loading, resume]) 
 
   // --- Handlers ---
   
-  const saveTitle = async () => {
+  const handleUpdateTitle = async (newTitle: string) => {
      if (!resume || !id) return
      try {
-       await apiService.updateResume(id, { title: resume.title })
+       setSaving(true)
+       await apiService.updateResume(id, { title: newTitle })
+       setResume(prev => prev ? { ...prev, title: newTitle} : null)
      } catch (e) {
         console.error(e)
-        // toast.error("Failed to save title")
+        toast.error("Failed to save title")
+     } finally {
+        setSaving(false)
      }
   }
 
-  const handleRawDataChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleRawDataChange = (val: string) => {
     if (!resume) return
-    setResume({ ...resume, rawData: e.target.value })
+    setResume({ ...resume, rawData: val })
   }
   
-  const saveRawData = async () => {
-    if (!resume || !id) return
-    try {
-      setSaving(true)
-      await apiService.updateResume(id, { rawData: resume.rawData })
-      setSaving(false)
-    } catch (e) {
-      setSaving(false)
-      console.error(e)
-    }
-  }
+  // Save raw data on blur or before analyze? 
+  // We can save raw data when it changes (debounced) or just rely on 'Analyze' saving it.
+  // Let's rely on Analyze saving it for now to match 'Analyze' flow, 
+  // OR add a separate effect for rawData auto-save if needed. 
+  // Given existing logic had `saveRawData` on blur, let's keep it simple or implement if needed.
+  // The new RawInputTab doesn't explicitly have onBlur, but we can update state. 
 
   const handleAnalyze = async () => {
     if (!resume?.rawData?.trim()) {
@@ -174,15 +154,17 @@ export default function ResumeEditorPage() {
       
       const analyzedResume = await apiService.analyzeResume(id!)
       setResume(analyzedResume)
+      
       if (analyzedResume.structuredData) {
         const parsedData = {
-          ...analyzedResume.structuredData,
-          experience: analyzedResume.structuredData.experience || [],
-          education: analyzedResume.structuredData.education || [],
-          skills: analyzedResume.structuredData.skills || [],
+            ...analyzedResume.structuredData,
+            experience: analyzedResume.structuredData.experience || [],
+            education: analyzedResume.structuredData.education || [],
+            skills: analyzedResume.structuredData.skills || [],
         }
-        reset(parsedData)
+        form.reset(parsedData)
       }
+      
       setActiveTab("editor")
       toast.success("Analysis complete!")
     } catch (error) {
@@ -195,8 +177,16 @@ export default function ResumeEditorPage() {
 
   if (loading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-background">
+        <div className="border-b border-border">
+          <div className="container flex h-14 items-center px-4 md:px-6">
+            <Skeleton className="h-8 w-32" />
+          </div>
+        </div>
+        <div className="container px-4 py-8 md:px-6">
+          <Skeleton className="h-10 w-full max-w-md mb-8" />
+          <Skeleton className="h-[400px] w-full" />
+        </div>
       </div>
     )
   }
@@ -204,199 +194,67 @@ export default function ResumeEditorPage() {
   if (!resume) return null
 
   return (
-    <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <header className="border-b px-6 py-3 flex items-center justify-between bg-card">
-        <div className="flex gap-4 w-[80%] mx-auto">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex gap-4">
-            <Input 
-                className="h-8 font-semibold text-lg border-transparent hover:border-input focus:border-input px-2 -ml-2 w-[300px]" 
-                value={resume.title}
-                onChange={(e) => setResume({...resume, title: e.target.value})}
-                onBlur={saveTitle}
-            />
-            <div className="flex items-center gap-2 text-xs text-muted-foreground px-0">
-               <Badge variant={resume.status === 'analyzed' ? 'default' : 'outline'} className="text-[10px] h-5">
-                 {resume.status}
-               </Badge>
-               {saving && <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin"/> Saving...</span>}
-               {!saving && <span>Saved</span>}
+    <div className="min-h-screen bg-background flex flex-col">
+      <EditorHeader 
+        key={resume.title}
+        resume={resume} 
+        isSaving={saving} 
+        onUpdateTitle={handleUpdateTitle}
+      />
+      
+      <FormProvider {...form}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          <div className="border-b border-border bg-background">
+            <div className="">
+              <TabsList className="h-12 bg-transparent p-0 gap-4 w-full">
+                <TabsTrigger
+                  value="raw"
+                  className="relative rounded-none border-b-2 border-transparent bg-transparent pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  1. Raw Input
+                </TabsTrigger>
+                <TabsTrigger
+                  value="editor"
+                  className="relative rounded-none border-b-2 border-transparent bg-transparent pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                  // disabled={!resume.structuredData} // Optional: disable if no data? Target UI didn't seem to enforce strictly
+                >
+                  <Database className="mr-2 h-4 w-4" />
+                  2. Structured Data
+                </TabsTrigger>
+                <TabsTrigger
+                  value="preview"
+                  className="relative rounded-none border-b-2 border-transparent bg-transparent pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none"
+                  // disabled={!resume.structuredData}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  3. Preview
+                </TabsTrigger>
+              </TabsList>
             </div>
           </div>
-        </div>
-      </header>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-          <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0 mb-4">
-            <TabsTrigger value="raw" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2">
-              Raw Data
-            </TabsTrigger>
-            <TabsTrigger value="editor" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2" disabled={!resume.structuredData}>
-              Editor
-            </TabsTrigger>
-            <TabsTrigger value="preview" className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-2" disabled={!resume.structuredData}>
-              Preview JSON
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Raw Data Tab */}
-          <TabsContent value="raw" className="flex-1 h-full overflow-hidden data-[state=inactive]:hidden">
-            <div className="flex flex-col h-full gap-4">
-              <div className="flex justify-between items-center">
-                <Label>Paste your resume text here (Ctrl+V)</Label>
-                <Button onClick={handleAnalyze} disabled={analyzing}>
-                   {analyzing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4 text-yellow-400"/>}
-                   Analyze with AI
-                </Button>
-              </div>
-              <Textarea 
-                className="flex-1 resize-none font-mono text-sm leading-relaxed" 
-                placeholder="Paste full resume content..."
-                value={resume.rawData || ''}
-                onChange={handleRawDataChange}
-                onBlur={saveRawData}
+          <TabsContent value="raw" className="flex-1 mt-0">
+            <div className="container px-4 py-6 md:px-6 h-full">
+              <RawInputTab 
+                 rawData={resume.rawData || ""} 
+                 isAnalyzing={analyzing} 
+                 onAnalyze={handleAnalyze} 
+                 onRawDataChange={handleRawDataChange}
               />
             </div>
           </TabsContent>
-
-          {/* Editor Tab */}
-          <TabsContent value="editor" className="flex-1 overflow-hidden data-[state=inactive]:hidden">
-             <ScrollArea className="h-full pr-4">
-                <div className="space-y-8 pb-20 max-w-4xl mx-auto">
-                    
-                    {/* Personal Info */}
-                    <Card>
-                      <CardContent className="pt-6 grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Full Name</Label>
-                          <Input {...register("personalInfo.fullName")} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Email</Label>
-                          <Input {...register("personalInfo.email")} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Phone</Label>
-                          <Input {...register("personalInfo.phone")} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>LinkedIn</Label>
-                          <Input {...register("personalInfo.linkedin")} />
-                        </div>
-                        <div className="col-span-2 space-y-2">
-                          <Label>Location</Label>
-                          <Input {...register("personalInfo.location")} />
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Skills */}
-                    <Card>
-                        <CardContent className="pt-6 space-y-4">
-                            <Label>Skills (Comma separated)</Label>
-                            <Controller
-                                control={control}
-                                name="skills"
-                                render={({ field }) => (
-                                    <Textarea 
-                                        {...field} 
-                                        value={Array.isArray(field.value) ? field.value.join(", ") : field.value} 
-                                        onChange={(e) => {
-                                            const val = e.target.value.split(",").map(s => s.trim())
-                                            field.onChange(val)
-                                        }}
-                                        placeholder="React, TypeScript, Node.js..."
-                                    />
-                                )}
-                            />
-                            <p className="text-xs text-muted-foreground">Separate skills with commas.</p>
-                        </CardContent>
-                    </Card>
-
-                    {/* Experience */}
-                     <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <h3 className="text-lg font-semibold">Experience</h3>
-                            <Button size="sm" variant="outline" onClick={() => appendExp({ company: "", position: "", highlights: [] })}>
-                                <Plus className="h-4 w-4 mr-2"/> Add Job
-                            </Button>
-                        </div>
-                        
-                        <Accordion type="multiple" className="space-y-4">
-                            {experienceFields.map((field, index) => (
-                                <AccordionItem key={field.id} value={field.id} className="border rounded-md px-4">
-                                    <AccordionTrigger className="hover:no-underline">
-                                        <div className="flex gap-4 text-left">
-                                            <span className="font-bold">{watch(`experience.${index}.company`) || "New Company"}</span>
-                                            <span className="text-muted-foreground">{watch(`experience.${index}.position`)}</span>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="space-y-4 pt-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label>Company</Label>
-                                                <Input {...register(`experience.${index}.company`)} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Position</Label>
-                                                <Input {...register(`experience.${index}.position`)} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Start Date</Label>
-                                                <Input {...register(`experience.${index}.startDate`)} placeholder="YYYY-MM" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>End Date</Label>
-                                                <Input {...register(`experience.${index}.endDate`)} placeholder="Present" />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Description / Highlights</Label>
-                                            <Controller 
-                                                control={control}
-                                                name={`experience.${index}.highlights`}
-                                                render={({ field }) => (
-                                                    <Textarea 
-                                                        value={Array.isArray(field.value) ? field.value.join("\\n") : field.value}
-                                                        onChange={(e) => field.onChange(e.target.value.split("\\n"))}
-                                                        placeholder="Achievements..."
-                                                        className="min-h-[100px]"
-                                                    />
-                                                )}
-                                            />
-                                            <p className="text-xs text-muted-foreground">One bullet point per line.</p>
-                                        </div>
-                                        <div className="flex justify-end pt-2">
-                                            <Button variant="destructive" size="sm" onClick={() => removeExp(index)}>
-                                                <Trash2 className="h-4 w-4 mr-2"/> Remove Position
-                                            </Button>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                     </div>
-
-                </div>
-             </ScrollArea>
+          
+          <TabsContent value="editor" className="flex-1 mt-0 overflow-auto">
+             <StructuredDataTab />
           </TabsContent>
-
-          {/* Preview Tab */}
-          <TabsContent value="preview" className="flex-1 overflow-hidden data-[state=inactive]:hidden">
-             <ScrollArea className="h-full bg-muted/50 p-4 rounded-md">
-                <pre className="font-mono text-xs">
-                    {JSON.stringify(watch(), null, 2)}
-                </pre>
-             </ScrollArea>
+          
+          <TabsContent value="preview" className="flex-1 mt-0">
+             <PreviewTab />
           </TabsContent>
-
         </Tabs>
-      </div>
+      </FormProvider>
     </div>
   )
 }
+
