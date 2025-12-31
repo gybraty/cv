@@ -33,7 +33,7 @@ export function ResumeCard({ resume, onEdit, onDelete }: ResumeCardProps) {
   }
 
   return (
-    <Card className="group relative transition-all duration-200 hover:shadow-md hover:border-foreground/20">
+    <Card className="group relative transition-all duration-200 hover:shadow-md hover:border-foreground/20 bg-background">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">

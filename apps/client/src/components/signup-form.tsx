@@ -52,7 +52,7 @@ export function SignupForm({
 
   return (
     <div className={cn("flex flex-col gap-6 w-full max-w-md", className)} {...props}>
-      <Card className="w-full shadow-sm border-border">
+      <Card className="w-full shadow-sm border-border bg-background">
         <CardHeader className="space-y-4 text-center pb-6">
           <div className="flex justify-center">
             <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
@@ -79,7 +79,7 @@ export function SignupForm({
 
           <div className="relative">
             <Separator />
-            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs text-muted-foreground">
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-3 text-xs text-muted-foreground">
               Or continue with email
             </span>
           </div>
