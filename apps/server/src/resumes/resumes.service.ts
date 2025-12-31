@@ -17,7 +17,14 @@ export class ResumesService {
     private readonly usersService: UsersService,
   ) {}
 
-  private async getMongoUserId(supabaseId: string): Promise<string> {
+  private async getMongoUserId(
+    supabaseId: string,
+    email?: string,
+  ): Promise<string> {
+    if (email) {
+      const user = await this.usersService.findOrCreate(supabaseId, email);
+      return (user as any)._id.toString();
+    }
     const user = await this.usersService.findBySupabaseId(supabaseId);
     return user._id.toString();
   }
@@ -25,8 +32,9 @@ export class ResumesService {
   async create(
     supabaseId: string,
     createResumeDto: CreateResumeDto,
+    email?: string,
   ): Promise<Resume> {
-    const userId = await this.getMongoUserId(supabaseId);
+    const userId = await this.getMongoUserId(supabaseId, email);
     const newResume = new this.resumeModel({
       userId,
       ...createResumeDto,
@@ -34,16 +42,20 @@ export class ResumesService {
     return newResume.save();
   }
 
-  async findAll(supabaseId: string): Promise<Resume[]> {
-    const userId = await this.getMongoUserId(supabaseId);
+  async findAll(supabaseId: string, email?: string): Promise<Resume[]> {
+    const userId = await this.getMongoUserId(supabaseId, email);
     return this.resumeModel
       .find({ userId })
       .select('title status updatedAt')
       .exec();
   }
 
-  async findOne(id: string, supabaseId: string): Promise<Resume> {
-    const userId = await this.getMongoUserId(supabaseId);
+  async findOne(
+    id: string,
+    supabaseId: string,
+    email?: string,
+  ): Promise<Resume> {
+    const userId = await this.getMongoUserId(supabaseId, email);
     const resume = await this.resumeModel.findById(id).exec();
     if (!resume) {
       throw new NotFoundException(`Resume with ID ${id} not found`);
@@ -60,8 +72,9 @@ export class ResumesService {
     id: string,
     supabaseId: string,
     updateResumeDto: UpdateResumeDto,
+    email?: string,
   ): Promise<Resume> {
-    await this.findOne(id, supabaseId); // Verify ownership and existence
+    await this.findOne(id, supabaseId, email); // Verify ownership and existence
 
     const updatedResume = await this.resumeModel
       .findByIdAndUpdate(id, { $set: updateResumeDto }, { new: true })
@@ -70,8 +83,8 @@ export class ResumesService {
     return updatedResume;
   }
 
-  async remove(id: string, supabaseId: string): Promise<void> {
-    await this.findOne(id, supabaseId); // Verify ownership and existence
+  async remove(id: string, supabaseId: string, email?: string): Promise<void> {
+    await this.findOne(id, supabaseId, email); // Verify ownership and existence
     await this.resumeModel.findByIdAndDelete(id).exec();
   }
 }
