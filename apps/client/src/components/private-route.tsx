@@ -25,5 +25,5 @@ export const PublicRoute = ({ element }: PrivateRouteProps) => {
     return <div>Loading...</div>;
   }
 
-  return !user ? <>{element}</> : <Navigate to="/dashboard" replace />;
+  return !user ? <>{element}</> : <Navigate to="/" replace />;
 };

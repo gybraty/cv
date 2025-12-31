@@ -91,7 +91,7 @@ export default function ResumeEditorPage() {
       } catch (error) {
         console.error(error)
         toast.error("Failed to load resume")
-        navigate("/dashboard")
+        navigate("/")
       } finally {
         setLoading(false)
       }
@@ -208,7 +208,7 @@ export default function ResumeEditorPage() {
       {/* Header */}
       <header className="border-b px-6 py-3 flex items-center justify-between bg-card">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex flex-col gap-1">

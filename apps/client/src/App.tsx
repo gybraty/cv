@@ -26,7 +26,6 @@ export function App() {
       {/* Protected Routes wrapped in Layout */}
       <Route element={<Layout />}>
         <Route path="/" element={<PrivateRoute path="/dashboard" element={<DashboardPage />} />} />
-        <Route path="/dashboard" element={<PrivateRoute path="/dashboard" element={<DashboardPage />} />} />
         <Route path="/profile" element={<PrivateRoute path="/profile" element={<ProfilePage />} />} />
         <Route path="/resumes/:id/edit" element={<PrivateRoute path="/resumes/:id/edit" element={<ResumeEditorPage />} />} />
       </Route>
