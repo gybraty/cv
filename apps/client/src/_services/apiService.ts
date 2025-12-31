@@ -25,11 +25,6 @@ apiClient.interceptors.request.use(async (config) => {
 });
 
 export const apiService = {
-  // --- Existing Methods (Refactored to use axios or kept as is? Let's refactor for consistency if easy, but keeping them working is priority.)
-  // The user asked to "Update API Service... Add methods".
-  // I will leave existing fetch implementations if they work, but using the new apiClient is cleaner.
-  // I'll refactor them to use apiClient to ensure token logic is unified.
-
   async getPrivateMessage() {
     const response = await apiClient.get('/private');
     return response.data;
@@ -44,8 +39,6 @@ export const apiService = {
     const response = await apiClient.patch('/users/me', data);
     return response.data;
   },
-
-  // --- Resume Methods ---
 
   async getAllResumes(): Promise<Resume[]> {
     const response = await apiClient.get<Resume[]>('/resumes');
@@ -68,7 +61,6 @@ export const apiService = {
   },
 
   async analyzeResume(id: string): Promise<Resume> {
-    // This endpoint triggers AI analysis
     const response = await apiClient.post<Resume>(`/resumes/${id}/analyze`);
     return response.data;
   },

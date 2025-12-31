@@ -22,8 +22,7 @@ export function App() {
     <Routes>
       <Route path="/login" element={<PublicRoute element={<LoginPage />} />} />
       <Route path="/signup" element={<PublicRoute element={<SignupPage />} />} />
-      
-      {/* Protected Routes wrapped in Layout */}
+
       <Route element={<Layout />}>
         <Route path="/" element={<PrivateRoute path="/dashboard" element={<DashboardPage />} />} />
         <Route path="/profile" element={<PrivateRoute path="/profile" element={<ProfilePage />} />} />

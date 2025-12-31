@@ -20,7 +20,6 @@ export function PreviewTab() {
 
   return (
     <div className="flex flex-col lg:flex-row h-full">
-      {/* Settings Panel */}
       <div className="w-full lg:w-72 border-b lg:border-b-0 lg:border-r border-border p-6 space-y-6 bg-muted/30">
         <div className="space-y-4">
           <h3 className="font-semibold text-sm">Export Settings</h3>

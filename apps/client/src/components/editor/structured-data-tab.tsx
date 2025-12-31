@@ -24,7 +24,6 @@ export function StructuredDataTab() {
     name: "education",
   })
 
-  // Watch skills for the tag input
   const skills = watch("skills") || []
   const [newSkill, setNewSkill] = useState("")
 

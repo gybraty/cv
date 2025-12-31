@@ -10,7 +10,7 @@ export interface Resume {
   userId: string;
 }
 
-// Zod Schemas for Form Validation & Type Inference
+
 
 export const PersonalInfoSchema = z.object({
   fullName: z.string().min(1, 'Name is required'),
@@ -42,25 +42,16 @@ export const EducationSchema = z.object({
 
 export const SkillSchema = z.object({
   name: z.string().min(1, 'Skill name is required'),
-  level: z.string().optional(), // e.g., Beginner, Intermediate, Expert
+  level: z.string().optional(),
 });
 
 export const ResumeDataSchema = z.object({
   personalInfo: PersonalInfoSchema,
   experience: z.array(ExperienceSchema).optional(),
   education: z.array(EducationSchema).optional(),
-  skills: z.array(SkillSchema).optional(), // Can be simple array of strings or objects, adjusting based on requirement.
-    // Re-reading requirements: "Skills: A simple text input... or dynamic tag input".
-    // Let's support an array of strings for simplicity if acceptable, but the prompt mentioned "structuredData object... personalInfo, experience, education, skills".
-    // I'll stick to a stricter schema but might need to adapt if backend returns just strings.
-    // Let's assume list of strings for skills for now based on "comma separated" hint, but let's look at schema logic later.
-    // Wait, prompt says: "use Zod schema structure we discussed: personalInfo, experience, education, skills".
-    // I will double check if I have that structure.
+  skills: z.array(SkillSchema).optional(),
 });
 
-// For now, let's redefine skills as just array of strings to be safe for "simple text input",
-// OR keep it structured if we want to be fancy. "Skills: A simple text input where users can add skills (comma separated) OR a dynamic tag input."
-// I will make skills an array of strings for simplicity in the 'ResumeData'.
 export const SimpleResumeDataSchema = z.object({
   personalInfo: PersonalInfoSchema,
   experience: z.array(ExperienceSchema).optional().default([]),

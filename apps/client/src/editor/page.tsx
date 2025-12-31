@@ -17,7 +17,6 @@ import { RawInputTab } from "@/components/editor/raw-input-tab"
 import { StructuredDataTab } from "@/components/editor/structured-data-tab"
 import { PreviewTab } from "@/components/editor/preview-tab"
 
-// --- Helper for Debounce ---
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
   useEffect(() => {
@@ -37,7 +36,6 @@ export default function ResumeEditorPage() {
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState("raw")
 
-  // --- Form Setup ---
   const form = useForm<ResumeData>({
     resolver: zodResolver(SimpleResumeDataSchema) as any,
     defaultValues: {
@@ -48,11 +46,9 @@ export default function ResumeEditorPage() {
     },
   })
 
-  // Watch for changes to auto-save
   const watchedData = form.watch()
   const debouncedData = useDebounce(watchedData, 1000)
 
-  // --- Fetch Resume ---
   useEffect(() => {
     if (!id) return
     const fetchResume = async () => {
@@ -60,8 +56,7 @@ export default function ResumeEditorPage() {
         setLoading(true)
         const data = await apiService.getResumeById(id)
         setResume(data)
-        
-        // Populate form if structured data exists
+
         if (data.structuredData) {
           const parsedData = {
               ...data.structuredData,
@@ -70,9 +65,6 @@ export default function ResumeEditorPage() {
               skills: data.structuredData.skills || [],
           }
           form.reset(parsedData)
-          // If analyzed (or has data), default to editor tab, unless just landed
-          // Matching target UI logic usually starts at raw input or last state. 
-          // For now, if analyzed, show editor.
           if (data.status === 'analyzed') setActiveTab("editor")
         }
       } catch (error) {
@@ -84,13 +76,10 @@ export default function ResumeEditorPage() {
       }
     }
     fetchResume()
-  }, [id, navigate, form]) // Added form to deps carefully
-
-  // --- Auto-Save Logic (Structured Data) ---
+  }, [id, navigate, form])
   useEffect(() => {
     if (!resume || loading || analyzing || activeTab === "raw") return
-    
-    // Avoid saving if identical to what we think is on server
+
     if (JSON.stringify(debouncedData) === JSON.stringify(resume.structuredData)) {
         return
     }
@@ -113,7 +102,6 @@ export default function ResumeEditorPage() {
     
   }, [debouncedData, id, activeTab, analyzing, loading, resume]) 
 
-  // --- Handlers ---
   
   const handleUpdateTitle = async (newTitle: string) => {
      if (!resume || !id) return
@@ -133,13 +121,7 @@ export default function ResumeEditorPage() {
     if (!resume) return
     setResume({ ...resume, rawData: val })
   }
-  
-  // Save raw data on blur or before analyze? 
-  // We can save raw data when it changes (debounced) or just rely on 'Analyze' saving it.
-  // Let's rely on Analyze saving it for now to match 'Analyze' flow, 
-  // OR add a separate effect for rawData auto-save if needed. 
-  // Given existing logic had `saveRawData` on blur, let's keep it simple or implement if needed.
-  // The new RawInputTab doesn't explicitly have onBlur, but we can update state. 
+
 
   const handleAnalyze = async () => {
     if (!resume?.rawData?.trim()) {
@@ -148,8 +130,7 @@ export default function ResumeEditorPage() {
     }
     try {
       setAnalyzing(true)
-      
-      // First ensure raw data is saved
+
       await apiService.updateResume(id!, { rawData: resume.rawData })
       
       const analyzedResume = await apiService.analyzeResume(id!)
@@ -217,7 +198,6 @@ export default function ResumeEditorPage() {
                 <TabsTrigger
                   value="editor"
                   className="relative rounded-none border-b-2 border-transparent bg-transparent pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                  // disabled={!resume.structuredData} // Optional: disable if no data? Target UI didn't seem to enforce strictly
                 >
                   <Database className="mr-2 h-4 w-4" />
                   2. Structured Data
@@ -225,7 +205,6 @@ export default function ResumeEditorPage() {
                 <TabsTrigger
                   value="preview"
                   className="relative rounded-none border-b-2 border-transparent bg-transparent pb-3 pt-2 font-medium text-muted-foreground shadow-none transition-none data-[state=active]:border-foreground data-[state=active]:text-foreground data-[state=active]:shadow-none"
-                  // disabled={!resume.structuredData}
                 >
                   <Eye className="mr-2 h-4 w-4" />
                   3. Preview

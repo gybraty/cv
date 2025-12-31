@@ -5,7 +5,7 @@ import type { RootState } from "../store";
 
 interface PrivateRouteProps {
   element: ReactNode;
-  path?: string; // Included to satisfy requirements, though often handled by Route
+  path?: string;
 }
 
 export const PrivateRoute = ({ element }: PrivateRouteProps) => {

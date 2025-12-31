@@ -33,7 +33,6 @@ import type { Theme } from "@/types/global"
 export default function ProfilePage() {
   const navigate = useNavigate()
   const { theme, setTheme } = useTheme()
-  // Use redux state for user
   const { user, loading: authLoading } = useSelector((state: RootState) => state.auth)
   const dispatch = useDispatch<AppDispatch>()
   
@@ -43,7 +42,6 @@ export default function ProfilePage() {
   const [avatar, setAvatar] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Initialize form state when user data is available
   useEffect(() => {
     if (user) {
       setFullName(user.fullName || "")
@@ -51,7 +49,6 @@ export default function ProfilePage() {
     }
   }, [user])
 
-  // Fetch resumes
   useEffect(() => {
     const fetchResumes = async () => {
       try {
@@ -66,7 +63,6 @@ export default function ProfilePage() {
     fetchResumes()
   }, [])
 
-  // Combined loading state
   const isLoading = authLoading || isLoadingResumes
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -76,10 +72,7 @@ export default function ProfilePage() {
   const handleNameBlur = async () => {
       try {
         await apiService.updateProfile({ profile: { fullName: fullName.trim() } })
-        // In a real Redux app you might want to update the store here too
-        // For now, we assume the user might need to refresh or we rely on checkSession
         dispatch({ type: 'auth/checkSession/fulfilled', payload: { ...user, fullName: fullName.trim() } }) // Optimistic update or re-fetch
-        // But better is to just re-fetch session or update store properly if actions exist
       } catch (error) {
         console.error("Failed to update profile", error)
       }
@@ -99,8 +92,6 @@ export default function ProfilePage() {
         setAvatar(result) // Optimistic update
         try {
            await apiService.updateProfile({ profile: { avatarUrl: result } })
-           // Update redux
-           // dispatch(...) 
         } catch (error) {
           console.error("Failed to update avatar", error)
         }
@@ -111,9 +102,6 @@ export default function ProfilePage() {
 
   const handleDeleteAccount = async () => {
     try {
-        // Assuming there is an API for this, or just logout for now if not implemented in backend yet.
-        // User requested "Delete Account" UI functionality.
-        // The original code uses `logout()`.
         await dispatch(logoutUser())
         navigate("/login")
     } catch (error) {
@@ -141,14 +129,12 @@ export default function ProfilePage() {
       <main className="container max-w-2xl px-4 py-8 md:px-6 space-y-8">
         <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
 
-        {/* Profile Section */}
         <Card className="bg-background">
           <CardHeader>
             <CardTitle>Personal Information</CardTitle>
             <CardDescription>Update your profile details and preferences</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Avatar */}
             <div className="flex items-center gap-6">
               <div className="relative">
                 <Avatar className="h-20 w-20">
@@ -179,8 +165,6 @@ export default function ProfilePage() {
             </div>
 
             <Separator />
-
-            {/* Form Fields */}
             <div className="grid gap-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
@@ -207,7 +191,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Settings Section */}
            <Card className="bg-background">
           <CardHeader>
             <CardTitle>Appearance</CardTitle>
@@ -239,7 +222,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Stats Section */}
            <Card className="bg-background">
           <CardHeader>
             <CardTitle>Account Statistics</CardTitle>
@@ -263,7 +245,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Danger Zone */}
         <Card className="border-destructive/50">
           <CardHeader>
             <CardTitle className="text-destructive">Danger Zone</CardTitle>
