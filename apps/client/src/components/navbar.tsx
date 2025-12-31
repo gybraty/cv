@@ -25,19 +25,15 @@ export function Navbar() {
   const navigate = useNavigate()
   const dispatch = useDispatch<AppDispatch>()
   const { user } = useSelector((state: RootState) => state.auth)
+  console.log(user)
 
   const handleLogout = async () => {
     await dispatch(logoutUser())
     navigate("/login")
   }
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2)
+  const getInitials = (email: string) => {
+    return email[0].toUpperCase()
   }
 
   return (
@@ -74,7 +70,7 @@ export function Navbar() {
               <Avatar className="h-9 w-9">
                 <AvatarImage src={user?.avatar || ""} alt={user?.fullName || ""} />
                 <AvatarFallback className="bg-muted text-muted-foreground text-sm font-medium">
-                  {user?.fullName ? getInitials(user.fullName) : "U"}
+                  {user?.email ? getInitials(user.email) : "U"}
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -84,7 +80,7 @@ export function Navbar() {
               <Avatar className="h-8 w-8">
                 <AvatarImage src={user?.avatar || ""} alt={user?.fullName || ""} />
                 <AvatarFallback className="bg-muted text-sm">
-                  {user?.fullName ? getInitials(user.fullName) : "U"}
+                  {user?.email ? getInitials(user.email) : "U"}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col space-y-0.5 leading-none">
