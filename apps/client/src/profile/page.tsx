@@ -27,6 +27,7 @@ import type { AppDispatch, RootState } from "@/store"
 import { logoutUser } from "@/_actions/authActions"
 import { apiService } from "@/_services/apiService"
 import type { Resume } from "@/types/resume"
+import type { Theme } from "@/types/global"
 
 
 export default function ProfilePage() {
@@ -223,7 +224,7 @@ export default function ProfilePage() {
               <ToggleGroup
                 type="single"
                 value={theme}
-                onValueChange={(value) => value && setTheme(value as any)}
+                onValueChange={(value) => value && setTheme(value as Theme)}
                 className="justify-start"
               >
                 <ToggleGroupItem value="light" aria-label="Light mode" className="gap-2">
