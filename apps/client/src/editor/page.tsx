@@ -207,11 +207,11 @@ export default function ResumeEditorPage() {
     <div className="flex flex-col h-screen bg-background">
       {/* Header */}
       <header className="border-b px-6 py-3 flex items-center justify-between bg-card">
-        <div className="flex items-center gap-4">
+        <div className="flex gap-4 w-[80%] mx-auto">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <div className="flex flex-col gap-1">
+          <div className="flex gap-4">
             <Input 
                 className="h-8 font-semibold text-lg border-transparent hover:border-input focus:border-input px-2 -ml-2 w-[300px]" 
                 value={resume.title}
