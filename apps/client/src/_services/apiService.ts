@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { supabase } from '../_utils/supabaseClient';
 import type { UpdateUserDto } from '@/types/user';
-import type { Resume, ResumeData } from '@/types/resume';
+import type { Resume } from '@/types/resume';
 
 // Create an Axios instance
 const apiClient = axios.create({
