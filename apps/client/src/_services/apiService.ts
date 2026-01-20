@@ -65,6 +65,62 @@ export const apiService = {
     return response.data;
   },
 
+  async analyzeResumeStream(
+    id: string,
+    onChunk: (chunk: string) => void,
+  ): Promise<string> {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const token = session?.access_token;
+
+    if (!token) {
+      throw new Error('No auth token found');
+    }
+
+    const response = await fetch(`/api/resumes/${id}/analyze/stream`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: 'text/event-stream',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('No response body');
+    }
+
+    const decoder = new TextDecoder();
+    let accumulatedText = '';
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value);
+      const lines = chunk.split('\n');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          try {
+            const data = JSON.parse(line.slice(6));
+             if (data.text) {
+                onChunk(data.text);
+                accumulatedText += data.text;
+             }
+          } catch (e) {
+            console.error('Error parsing SSE chunk', e);
+          }
+        }
+      }
+    }
+    return accumulatedText;
+  },
+
   async deleteResume(id: string): Promise<void> {
     await apiClient.delete(`/resumes/${id}`);
   },

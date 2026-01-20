@@ -1,7 +1,13 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Logger,
+  MessageEvent,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 import { z } from 'zod';
+import { Observable } from 'rxjs';
 
 const ResumeDataSchema = z.object({
   personalInfo: z.object({
@@ -13,37 +19,44 @@ const ResumeDataSchema = z.object({
     website: z.string().nullable().optional(),
   }),
   summary: z.string().nullable().optional(),
-  experience: z.array(
-    z.object({
-      company: z.string().nullable().optional(),
-      position: z.string().nullable().optional(),
-      startDate: z.string().nullable().optional(),
-      endDate: z.string().nullable().optional(),
-      description: z.string().nullable().optional(),
-      highlights: z.array(z.string()),
-    }),
-  ),
-  education: z.array(
-    z.object({
-      institution: z.string().nullable().optional(),
-      degree: z.string().nullable().optional(),
-      fieldOfStudy: z.string().nullable().optional(),
-      startDate: z.string().nullable().optional(),
-      endDate: z.string().nullable().optional(),
-    }),
-  ),
-  skills: z.array(z.string()),
+  experience: z
+    .array(
+      z.object({
+        company: z.string().nullable().optional(),
+        position: z.string().nullable().optional(),
+        startDate: z.string().nullable().optional(),
+        endDate: z.string().nullable().optional(),
+        description: z.string().nullable().optional(),
+        highlights: z.array(z.string()).nullable().optional(),
+      }),
+    )
+    .nullable()
+    .optional(),
+  education: z
+    .array(
+      z.object({
+        institution: z.string().nullable().optional(),
+        degree: z.string().nullable().optional(),
+        fieldOfStudy: z.string().nullable().optional(),
+        startDate: z.string().nullable().optional(),
+        endDate: z.string().nullable().optional(),
+      }),
+    )
+    .nullable()
+    .optional(),
+  skills: z.array(z.string()).nullable().optional(),
   projects: z
     .array(
       z.object({
         name: z.string().nullable().optional(),
         description: z.string().nullable().optional(),
         url: z.string().nullable().optional(),
-        technologies: z.array(z.string()).optional(),
+        technologies: z.array(z.string()).optional().nullable(),
       }),
     )
+    .nullable()
     .optional(),
-  languages: z.array(z.string()).optional(),
+  languages: z.array(z.string()).nullable().optional(),
 });
 
 export type ResumeData = z.infer<typeof ResumeDataSchema>;
@@ -70,7 +83,61 @@ export class AiService {
       throw new BadRequestException('Input text is empty');
     }
 
-    const systemPrompt = `You are an expert HR and Resume Writer. Your task is to analyze the unstructured text provided by the user and extract structured data for a professional resume.
+    const systemPrompt = this.getSystemPrompt();
+
+    try {
+      const result = await this.model.generateContent([systemPrompt, text]);
+      const response = result.response;
+      let textResponse = response.text();
+
+      textResponse = textResponse
+        .replace(/^```json\s*/, '')
+        .replace(/\s*```$/, '');
+
+      const parsedData: unknown = JSON.parse(textResponse);
+      const validatedData = ResumeDataSchema.parse(parsedData);
+
+      return validatedData;
+    } catch (error) {
+      this.logger.error('AI Processing Error:', error);
+      if (error instanceof z.ZodError) {
+        throw new BadRequestException(
+          'AI failed to structure data correctly: Validation Error',
+        );
+      }
+      throw new BadRequestException('AI failed to structure data correctly');
+    }
+  }
+
+  analyzeStream(text: string): Observable<MessageEvent> {
+    if (!text || text.trim().length === 0) {
+      throw new BadRequestException('Input text is empty');
+    }
+
+    return new Observable((subscriber) => {
+      void (async () => {
+        try {
+          const systemPrompt = this.getSystemPrompt();
+          const result = await this.model.generateContentStream([
+            systemPrompt,
+            text,
+          ]);
+
+          for await (const chunk of result.stream) {
+            const chunkText = chunk.text();
+            subscriber.next({ data: { text: chunkText } } as MessageEvent);
+          }
+          subscriber.complete();
+        } catch (error) {
+          this.logger.error('AI Stream Error:', error);
+          subscriber.error(error);
+        }
+      })();
+    });
+  }
+
+  private getSystemPrompt(): string {
+    return `You are an expert HR and Resume Writer. Your task is to analyze the unstructured text provided by the user and extract structured data for a professional resume.
     
     CRITICAL: You must output a JSON object that STRICTLY matches the following structure. Do not use snake_case. Use camelCase keys exactly as shown below:
 
@@ -119,28 +186,5 @@ export class AiService {
     - Formatting: Ensure dates are in MM/YYYY format.
     - Missing Info: If a field is missing, leave it as null or empty string, do not hallucinate.
     - Output: STRICT JSON only.`;
-
-    try {
-      const result = await this.model.generateContent([systemPrompt, text]);
-      const response = result.response;
-      let textResponse = response.text();
-
-      textResponse = textResponse
-        .replace(/^```json\s*/, '')
-        .replace(/\s*```$/, '');
-
-      const parsedData: unknown = JSON.parse(textResponse);
-      const validatedData = ResumeDataSchema.parse(parsedData);
-
-      return validatedData;
-    } catch (error) {
-      this.logger.error('AI Processing Error:', error);
-      if (error instanceof z.ZodError) {
-        throw new BadRequestException(
-          'AI failed to structure data correctly: Validation Error',
-        );
-      }
-      throw new BadRequestException('AI failed to structure data correctly');
-    }
   }
 }

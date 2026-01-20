@@ -51,7 +51,7 @@ export function StructuredDataTab() {
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 p-6">
-      {/* Personal Information */}
+
       <section className="space-y-4">
         <h2 className="text-lg font-semibold tracking-tight">Personal Information</h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -82,7 +82,7 @@ export function StructuredDataTab() {
         </div>
       </section>
 
-      {/* Summary */}
+
       <section className="space-y-4">
         <h2 className="text-lg font-semibold tracking-tight">Professional Summary</h2>
         <Textarea
@@ -92,7 +92,7 @@ export function StructuredDataTab() {
         />
       </section>
 
-      {/* Experience */}
+
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight">Experience</h2>
@@ -103,12 +103,6 @@ export function StructuredDataTab() {
         </div>
         <Accordion type="multiple" className="space-y-2">
           {experienceFields.map((field, index) => {
-             // Watch nested values for title display in accordion header
-             // We can't use `watch` in a map easily without performance hit or separate component, 
-             // but `useFieldArray` fields might NOT reflect realtime value if we just use `field.company`. 
-             // Actually React Hook Form advises `useWatch` or creating a sub-component. 
-             // For simplicity, we'll assume `watch` at top level covers it or we accept non-realtime header updates till collapse/expand 
-             // OR we render a sub-component. To keep it simple and performant enough for <10 items:
              const company = watch(`experience.${index}.company`)
              const position = watch(`experience.${index}.position`)
              
@@ -159,13 +153,7 @@ export function StructuredDataTab() {
 
                 <div className="space-y-2">
                   <Label>Description</Label>
-                  <Input {...register(`experience.${index}.description`)} placeholder="Short description..." className="hidden" /> 
-                  {/* Note: Original UI had simple description, but also highlights array. 
-                      Our Schema has `description` string AND `highlights` array. 
-                      The Target UI used `description` as a Textarea.
-                      Existing `page.tsx` mapped text array to highlights. 
-                      Let's stick to Target UI `description` textarea for now and map it to `description` field in schema.
-                  */}
+                  <Input {...register(`experience.${index}.description`)} placeholder="Short description..." className="hidden" />
                    <Controller
                     control={control}
                     name={`experience.${index}.description`}
@@ -193,7 +181,7 @@ export function StructuredDataTab() {
         </Accordion>
       </section>
       
-      {/* Education */}
+
       <section className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight">Education</h2>
@@ -252,7 +240,6 @@ export function StructuredDataTab() {
         </Accordion>
       </section>
 
-      {/* Skills */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold tracking-tight">Skills</h2>
         <div className="flex flex-wrap gap-2 min-h-[40px] p-3 border border-border rounded-lg bg-background">

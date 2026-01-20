@@ -6,6 +6,7 @@ import {
   HttpCode,
   BadRequestException,
   HttpStatus,
+  Sse,
 } from '@nestjs/common';
 import { AiService, ResumeData } from './ai.service';
 import { ResumesService } from '../resumes/resumes.service';
@@ -38,6 +39,10 @@ export class AiController {
       throw new BadRequestException('Please add text to your resume first');
     }
 
+    console.log(
+      `Analyzing resume ${id}, rawData length: ${resume.rawData.length}`,
+    );
+
     const structuredData: ResumeData = await this.aiService.analyze(
       resume.rawData,
     );
@@ -48,5 +53,21 @@ export class AiController {
     });
 
     return updatedResume;
+  }
+
+  @Sse(':id/analyze/stream')
+  @UseGuards(AuthGuard)
+  async analyzeResumeStream(
+    @Param('id') id: string,
+    @CurrentUser() user: CurrentUserType,
+  ) {
+    const userId = user.sub;
+    const resume = await this.resumesService.findOne(id, userId);
+
+    if (!resume.rawData || resume.rawData.trim() === '') {
+      throw new BadRequestException('Please add text to your resume first');
+    }
+
+    return this.aiService.analyzeStream(resume.rawData);
   }
 }

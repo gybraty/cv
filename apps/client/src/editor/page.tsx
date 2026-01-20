@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -35,6 +35,9 @@ export default function ResumeEditorPage() {
   const [analyzing, setAnalyzing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState("raw")
+  const [analysisStream, setAnalysisStream] = useState("")
+  const analysisStreamQueue = useRef<string[]>([])
+  const streamInterval = useRef<any>(null)
 
   const form = useForm<ResumeData>({
     resolver: zodResolver(SimpleResumeDataSchema) as any,
@@ -48,6 +51,23 @@ export default function ResumeEditorPage() {
 
   const watchedData = form.watch()
   const debouncedData = useDebounce(watchedData, 1000)
+
+  // Stream processing effect
+  useEffect(() => {
+    if (streamInterval.current) clearInterval(streamInterval.current)
+    
+    streamInterval.current = setInterval(() => {
+      if (analysisStreamQueue.current.length > 0) {
+        // Process up to 2 characters per tick for typing effect
+        const charsToProcess = analysisStreamQueue.current.splice(0, 3)
+        setAnalysisStream(prev => prev + charsToProcess.join(""))
+      }
+    }, 15) // Adjust speed here: 15ms * 3 chars ~= 15-20ms per update
+
+    return () => {
+       if (streamInterval.current) clearInterval(streamInterval.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (!id) return
@@ -130,20 +150,46 @@ export default function ResumeEditorPage() {
     }
     try {
       setAnalyzing(true)
+      setAnalysisStream("") // Reset stream
 
       await apiService.updateResume(id!, { rawData: resume.rawData })
       
-      const analyzedResume = await apiService.analyzeResume(id!)
-      setResume(analyzedResume)
       
-      if (analyzedResume.structuredData) {
-        const parsedData = {
-            ...analyzedResume.structuredData,
-            experience: analyzedResume.structuredData.experience || [],
-            education: analyzedResume.structuredData.education || [],
-            skills: analyzedResume.structuredData.skills || [],
+      // Start streaming
+      const streamResult = await apiService.analyzeResumeStream(id!, (chunk) => {
+         // Push characters to queue instead of updating state directly
+         const chars = chunk.split('')
+         analysisStreamQueue.current.push(...chars)
+      })
+
+      // Wait for visualization to catch up
+      while (analysisStreamQueue.current.length > 0) {
+         await new Promise(r => setTimeout(r, 100))
+      }
+      
+      // Small buffer at the end
+      await new Promise(r => setTimeout(r, 500))
+
+      // Parse and save the streamed result
+      const cleanJson = streamResult.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+      const parsedData = JSON.parse(cleanJson);
+      
+      // Save structured data to DB
+      const updatedResume = await apiService.updateResume(id!, {
+         structuredData: parsedData,
+         status: 'analyzed'
+      })
+      
+      setResume(updatedResume)
+      
+      if (updatedResume.structuredData) {
+        const formData = {
+            ...updatedResume.structuredData,
+            experience: updatedResume.structuredData.experience || [],
+            education: updatedResume.structuredData.education || [],
+            skills: updatedResume.structuredData.skills || [],
         }
-        form.reset(parsedData)
+        form.reset(formData)
       }
       
       setActiveTab("editor")
@@ -153,6 +199,7 @@ export default function ResumeEditorPage() {
       toast.error("Analysis failed. Please try again.")
     } finally {
       setAnalyzing(false)
+      setAnalysisStream("") 
     }
   }
 
@@ -220,6 +267,7 @@ export default function ResumeEditorPage() {
                  isAnalyzing={analyzing} 
                  onAnalyze={handleAnalyze} 
                  onRawDataChange={handleRawDataChange}
+                 analysisStream={analysisStream}
               />
             </div>
           </TabsContent>
