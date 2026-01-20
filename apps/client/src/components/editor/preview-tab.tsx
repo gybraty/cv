@@ -16,7 +16,7 @@ export function PreviewTab() {
     window.print()
   }
 
-  const { personalInfo, summary, experience, education, skills } = data
+  const { personalInfo, summary, experience, education, skills, projects, languages } = data
 
   return (
     <div className="flex flex-col lg:flex-row h-full">
@@ -135,6 +135,15 @@ export function PreviewTab() {
                         {exp.description && (
                           <p className="text-sm leading-relaxed whitespace-pre-line">{exp.description}</p>
                         )}
+                        {exp.highlights && exp.highlights.length > 0 && (
+                          <ul className="list-disc list-outside ml-4 mt-2 space-y-1">
+                            {exp.highlights.map((highlight, idx) => (
+                              <li key={idx} className="text-sm leading-relaxed">
+                                {highlight}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -164,11 +173,64 @@ export function PreviewTab() {
                 </section>
               )}
 
+              {/* Projects */}
+              {projects && projects.length > 0 && (
+                <section className="space-y-4">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Projects</h2>
+                  <div className="space-y-4">
+                    {projects.map((project, i) => (
+                      <div key={i} className="space-y-1">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="font-semibold">
+                              {project.name}
+                              {project.url && (
+                                <a
+                                  href={project.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="ml-2 text-xs font-normal text-muted-foreground hover:underline"
+                                >
+                                  (Link)
+                                </a>
+                              )}
+                            </h3>
+                          </div>
+                        </div>
+                        {project.description && (
+                          <p className="text-sm leading-relaxed whitespace-pre-line">{project.description}</p>
+                        )}
+                        {project.technologies && project.technologies.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {project.technologies.map((tech, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-semibold font-mono text-foreground"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
               {/* Skills */}
               {skills && skills.length > 0 && (
                 <section className="space-y-2">
                   <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Skills</h2>
                   <p className="text-sm">{skills.join(" • ")}</p>
+                </section>
+              )}
+
+              {/* Languages */}
+              {languages && languages.length > 0 && (
+                <section className="space-y-2">
+                  <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Languages</h2>
+                  <p className="text-sm">{languages.join(" • ")}</p>
                 </section>
               )}
             </div>

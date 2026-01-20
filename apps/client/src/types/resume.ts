@@ -45,11 +45,20 @@ export const SkillSchema = z.object({
   level: z.string().optional(),
 });
 
+export const ProjectSchema = z.object({
+  name: z.string().min(1, 'Project name is required'),
+  description: z.string().optional(),
+  url: z.string().url('Invalid URL').optional().or(z.literal('')),
+  technologies: z.array(z.string()).optional(),
+});
+
 export const ResumeDataSchema = z.object({
   personalInfo: PersonalInfoSchema,
   experience: z.array(ExperienceSchema).optional(),
   education: z.array(EducationSchema).optional(),
   skills: z.array(SkillSchema).optional(),
+  projects: z.array(ProjectSchema).optional(),
+  languages: z.array(z.string()).optional(),
 });
 
 export const SimpleResumeDataSchema = z.object({
@@ -57,6 +66,8 @@ export const SimpleResumeDataSchema = z.object({
   experience: z.array(ExperienceSchema).optional().default([]),
   education: z.array(EducationSchema).optional().default([]),
   skills: z.array(z.string()).optional().default([]),
+  projects: z.array(ProjectSchema).optional().default([]),
+  languages: z.array(z.string()).optional().default([]),
   summary: z.string().optional(),
 });
 
@@ -64,3 +75,4 @@ export type ResumeData = z.infer<typeof SimpleResumeDataSchema>;
 export type PersonalInfo = z.infer<typeof PersonalInfoSchema>;
 export type Experience = z.infer<typeof ExperienceSchema>;
 export type Education = z.infer<typeof EducationSchema>;
+export type Project = z.infer<typeof ProjectSchema>;

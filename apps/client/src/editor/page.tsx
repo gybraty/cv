@@ -52,17 +52,15 @@ export default function ResumeEditorPage() {
   const watchedData = form.watch()
   const debouncedData = useDebounce(watchedData, 1000)
 
-  // Stream processing effect
   useEffect(() => {
     if (streamInterval.current) clearInterval(streamInterval.current)
     
     streamInterval.current = setInterval(() => {
       if (analysisStreamQueue.current.length > 0) {
-        // Process up to 2 characters per tick for typing effect
         const charsToProcess = analysisStreamQueue.current.splice(0, 3)
         setAnalysisStream(prev => prev + charsToProcess.join(""))
       }
-    }, 15) // Adjust speed here: 15ms * 3 chars ~= 15-20ms per update
+    }, 5)
 
     return () => {
        if (streamInterval.current) clearInterval(streamInterval.current)
@@ -150,31 +148,24 @@ export default function ResumeEditorPage() {
     }
     try {
       setAnalyzing(true)
-      setAnalysisStream("") // Reset stream
-
+      setAnalysisStream("")
+ 
       await apiService.updateResume(id!, { rawData: resume.rawData })
-      
-      
-      // Start streaming
+       
       const streamResult = await apiService.analyzeResumeStream(id!, (chunk) => {
-         // Push characters to queue instead of updating state directly
          const chars = chunk.split('')
          analysisStreamQueue.current.push(...chars)
       })
 
-      // Wait for visualization to catch up
       while (analysisStreamQueue.current.length > 0) {
          await new Promise(r => setTimeout(r, 100))
       }
       
-      // Small buffer at the end
       await new Promise(r => setTimeout(r, 500))
 
-      // Parse and save the streamed result
       const cleanJson = streamResult.replace(/^```json\s*/, '').replace(/\s*```$/, '');
       const parsedData = JSON.parse(cleanJson);
       
-      // Save structured data to DB
       const updatedResume = await apiService.updateResume(id!, {
          structuredData: parsedData,
          status: 'analyzed'
@@ -284,4 +275,3 @@ export default function ResumeEditorPage() {
     </div>
   )
 }
-

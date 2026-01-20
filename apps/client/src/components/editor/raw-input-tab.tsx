@@ -27,7 +27,6 @@ john.doe@email.com | (555) 123-4567
 Senior Software Engineer with 5+ years of experience..."
         className="overflow-y-auto flex-1 min-h-[400px] resize-none text-base leading-relaxed p-6 border-border focus-visible:ring-1 border-0 shadow-none focus-visible:ring-0"
       />
-      {/* Streaming Overlay/Preview */}
       {isAnalyzing && analysisStream && (
         <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center p-8 z-10 transition-all duration-300">
            <div className="w-full max-w-2xl bg-card border rounded-xl shadow-2xl p-6 font-mono text-xs md:text-sm overflow-hidden flex flex-col h-[60vh]">
