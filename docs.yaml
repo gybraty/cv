@@ -1,0 +1,264 @@
+openapi: 3.0.0
+paths:
+  /:
+    get:
+      operationId: AppController_getHello
+      parameters: []
+      responses:
+        "200":
+          description: Return hello message.
+      summary: Get hello message
+      tags:
+        - app
+  /users/me:
+    get:
+      operationId: UsersController_getProfile
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+      security:
+        - JWT-auth: []
+      summary: Get current user profile
+      tags:
+        - users
+    patch:
+      operationId: UsersController_updateProfile
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserDto"
+      responses:
+        "200":
+          description: ""
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+      security:
+        - JWT-auth: []
+      summary: Update current user profile
+      tags:
+        - users
+    delete:
+      operationId: UsersController_removeAccount
+      parameters: []
+      responses:
+        "200":
+          description: User deleted
+      security:
+        - JWT-auth: []
+      summary: Delete current user account
+      tags:
+        - users
+  /resumes:
+    post:
+      operationId: ResumesController_create
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateResumeDto"
+      responses:
+        "201":
+          description: ""
+      security:
+        - JWT-auth: []
+      summary: Create new resume
+      tags:
+        - Resumes
+    get:
+      operationId: ResumesController_findAll
+      parameters: []
+      responses:
+        "200":
+          description: ""
+      security:
+        - JWT-auth: []
+      summary: Get all resumes
+      tags:
+        - Resumes
+  /resumes/{id}:
+    get:
+      operationId: ResumesController_findOne
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - JWT-auth: []
+      summary: Get resume by id
+      tags:
+        - Resumes
+    patch:
+      operationId: ResumesController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateResumeDto"
+      responses:
+        "200":
+          description: ""
+      security:
+        - JWT-auth: []
+      summary: Update resume by id
+      tags:
+        - Resumes
+    delete:
+      operationId: ResumesController_remove
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - JWT-auth: []
+      summary: Delete resume by id
+      tags:
+        - Resumes
+  /resumes/{id}/analyze:
+    post:
+      operationId: AiController_analyzeResume
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - JWT-auth: []
+      tags:
+        - Ai
+  /resumes/{id}/analyze/stream:
+    get:
+      operationId: AiController_analyzeResumeStream
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        "200":
+          description: ""
+      security:
+        - JWT-auth: []
+      tags:
+        - Ai
+info:
+  title: CV Project API
+  description: The CV Project API description
+  version: "1.0"
+  contact: {}
+tags: []
+servers: []
+components:
+  securitySchemes:
+    JWT-auth:
+      scheme: bearer
+      bearerFormat: JWT
+      type: http
+      name: JWT
+      description: Enter JWT token
+      in: header
+  schemas:
+    User:
+      type: object
+      properties: {}
+    UpdateProfileDto:
+      type: object
+      properties:
+        fullName:
+          type: string
+          example: John Doe
+          description: Full name of the user
+        avatarUrl:
+          type: string
+          example: https://example.com/avatar.png
+          description: URL to avatar image
+    UpdateSettingsDto:
+      type: object
+      properties:
+        theme:
+          type: string
+          example: dark
+          enum:
+            - light
+            - dark
+            - system
+          description: UI theme preference
+        onboardingCompleted:
+          type: boolean
+          example: true
+          description: Whether onboarding is completed
+    UpdateUserDto:
+      type: object
+      properties:
+        profile:
+          $ref: "#/components/schemas/UpdateProfileDto"
+        settings:
+          $ref: "#/components/schemas/UpdateSettingsDto"
+    CreateResumeDto:
+      type: object
+      properties:
+        title:
+          type: string
+          example: My Awesome Resume
+          description: The title of the resume
+    UpdateResumeDto:
+      type: object
+      properties:
+        title:
+          type: string
+          example: Updated Resume Title
+          description: The new title of the resume
+        rawData:
+          type: string
+          example: "Experience: Software Engineer..."
+          description: Raw text content for analysis
+        structuredData:
+          type: object
+          example:
+            name: John Doe
+            skills:
+              - NestJS
+          description: Structured JSON data extracted from raw text
+        status:
+          type: string
+          example: analyzed
+          description: Status of the resume
+          enum:
+            - draft
+            - analyzed
+            - exported
+security:
+  - JWT-auth: []
